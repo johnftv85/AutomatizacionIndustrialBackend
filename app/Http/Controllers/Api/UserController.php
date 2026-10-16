@@ -34,18 +34,29 @@ class UserController extends Controller
         return response()->json($user, 200);
     }
 
-    public function update(Request $request, User $user): JsonResponse
+    public function update(Request $request, int $user): JsonResponse
     {
+        $request->validate([
+            'enterprice_id' => ['required', 'integer', 'exists:enterprice,id'],
+        ]);
+
+        // Primero se valida que el usuario exista dentro de la empresa indicada
+        $model = User::where('enterprice_id', $request->integer('enterprice_id'))->find($user);
+
+        if (! $model) {
+            return response()->json(['message' => 'El usuario no existe en la empresa'], 404);
+        }
+
+        // La empresa solo identifica al usuario: no se puede usar para moverlo a otra
         $data = $request->validate([
-            'enterprice_id' => ['sometimes', 'nullable', 'integer', 'exists:enterprice,id'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:users,email,'.$model->id],
             'password' => ['sometimes', 'required', 'string', Password::min(8)],
         ]);
 
-        $user->update($data);
+        $model->update($data);
 
-        return response()->json($user, 200);
+        return response()->json($model, 200);
     }
 
     public function destroy(User $user): JsonResponse

@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // Credenciales HTTP Basic con las que los equipos reportan lecturas
+    'device' => [
+        'username' => env('DEVICE_USERNAME'),
+        'password' => env('DEVICE_PASSWORD'),
+    ],
+
 ];
