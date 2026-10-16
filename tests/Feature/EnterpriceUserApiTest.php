@@ -32,11 +32,25 @@ class EnterpriceUserApiTest extends TestCase
             'password' => 'password123', 'enterprice_id' => $e->id,
         ])->assertCreated()->assertJsonMissing(['password'])->json('id');
 
-        $this->patchJson("/api/user/$id", ['name' => 'Ana M', 'password' => 'nuevaclave123'])
+        $this->patchJson("/api/user/$id", ['enterprice_id' => $e->id, 'name' => 'Ana M', 'password' => 'nuevaclave123'])
             ->assertOk();
 
         $this->assertSame('Ana M', User::find($id)->name);
         $this->postJson('/api/user', ['name' => 'X', 'email' => 'ana@example.com', 'password' => 'password123'])
             ->assertUnprocessable();
+    }
+
+    public function test_usuario_no_puede_cambiar_de_empresa(): void
+    {
+        $a = Enterprice::create(['name' => 'A']);
+        $b = Enterprice::create(['name' => 'B']);
+        $u = User::factory()->create(['enterprice_id' => $a->id]);
+
+        $this->patchJson("/api/user/{$u->id}", ['enterprice_id' => $b->id])
+            ->assertNotFound()->assertJsonPath('message', 'El usuario no existe en la empresa');
+        $this->patchJson("/api/user/{$u->id}", ['name' => 'Z'])
+            ->assertUnprocessable()->assertJsonValidationErrors('enterprice_id');
+        $this->patchJson("/api/user/{$u->id}", ['enterprice_id' => $a->id, 'name' => 'Z'])
+            ->assertOk();
     }
 }
